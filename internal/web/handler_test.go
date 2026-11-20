@@ -29,14 +29,19 @@ func TestNewHandlerParsesTemplates(t *testing.T) {
 	today := time.Now().UTC().Format("2006-01-02")
 	if response.Code != http.StatusOK || strings.Contains(response.Body.String(), `name="multiple_days"`) ||
 		!strings.Contains(response.Body.String(), `name="date" type="date" value="`+today+`" required`) ||
-		!strings.Contains(response.Body.String(), `name="end_date" type="date" value="`+today+`" required`) {
+		!strings.Contains(response.Body.String(), `name="end_date" type="date" value="`+today+`" required`) ||
+		!strings.Contains(response.Body.String(), `class="button button-small theme-toggle"`) ||
+		!strings.Contains(response.Body.String(), `localStorage.getItem("events-theme")`) {
 		t.Fatalf("new event form did not render both dates with the same default: status %d", response.Code)
 	}
 
 	assetRequest := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
 	assetResponse := httptest.NewRecorder()
 	handler.ServeHTTP(assetResponse, assetRequest)
-	if assetResponse.Code != http.StatusOK || !strings.Contains(assetResponse.Body.String(), `end_date`) || !strings.Contains(assetResponse.Body.String(), `event.preventDefault()`) {
+	if assetResponse.Code != http.StatusOK || !strings.Contains(assetResponse.Body.String(), `end_date`) ||
+		!strings.Contains(assetResponse.Body.String(), `event.preventDefault()`) ||
+		!strings.Contains(assetResponse.Body.String(), `initializeThemeToggle`) ||
+		!strings.Contains(assetResponse.Body.String(), `localStorage.setItem("events-theme"`) {
 		t.Fatalf("date-range validation script was not served: status %d", assetResponse.Code)
 	}
 }

@@ -23,7 +23,40 @@ function initializeDateRanges(root = document) {
   root.querySelectorAll("form.event-form").forEach((form) => updateDateRange(form));
 }
 
-document.addEventListener("DOMContentLoaded", () => initializeDateRanges());
+function initializeThemeToggle() {
+  const toggle = document.querySelector(".theme-toggle");
+  if (!toggle) return;
+
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+  const getTheme = () => document.documentElement.dataset.theme || (systemTheme.matches ? "dark" : "light");
+  const updateToggle = () => {
+    const isDark = getTheme() === "dark";
+    const label = `Switch to ${isDark ? "light" : "dark"} mode`;
+    toggle.textContent = isDark ? "☀" : "☾";
+    toggle.setAttribute("aria-label", label);
+    toggle.setAttribute("title", label);
+    toggle.setAttribute("aria-pressed", String(isDark));
+  };
+
+  toggle.addEventListener("click", () => {
+    const theme = getTheme() === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem("events-theme", theme);
+    } catch {}
+    updateToggle();
+  });
+
+  systemTheme.addEventListener("change", () => {
+    if (!document.documentElement.dataset.theme) updateToggle();
+  });
+  updateToggle();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initializeDateRanges();
+  initializeThemeToggle();
+});
 document.addEventListener("htmx:afterSwap", (event) => initializeDateRanges(event.target));
 
 document.addEventListener("change", (event) => {

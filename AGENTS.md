@@ -11,6 +11,8 @@
   or stale guidance between these files.
 - Keep the README's event behavior description aligned with the app, including
   start/end date defaults, inclusive multi-day ranges, and validation rules.
+- Keep the README's description of appearance behavior aligned with the app,
+  including system theme defaults and how an explicit theme choice is saved.
 - The README points contributors to this file for the full documentation-maintenance
   rules; preserve that link if reorganizing the README.
 
