@@ -44,9 +44,10 @@ type pageData struct {
 // eventCard contains display values for one event.
 type eventCard struct {
 	Event     event.Event // Event is the stored event.
-	Day       string      // Day is the two-digit event day.
-	Month     string      // Month is the short event month name.
+	Day       string      // Day is the event day or abbreviated day range.
+	Month     string      // Month is the short start month name.
 	Year      string      // Year is set when the event is outside the current year.
+	MultiDay  bool        // MultiDay indicates that the event spans more than one date.
 	DateLabel string      // DateLabel is the readable event date.
 	TimeLabel string      // TimeLabel is the readable event time.
 	CostLabel string      // CostLabel is the formatted event cost.
@@ -55,15 +56,15 @@ type eventCard struct {
 
 // formData contains event form values, messages, and edit state.
 type formData struct {
-	Event           event.Event // Event contains the form's event values.
-	Date            string      // Date is the date input value.
-	EndDate         string      // EndDate is the optional final date input value.
-	MultiDay        bool        // MultiDay indicates that the end date field is selected.
-	Cost            string      // Cost is the decimal cost input value.
-	Error           string      // Error is the validation or save message.
-	Notice          string      // Notice is a non-blocking metadata message.
-	ImageSourceLink string      // ImageSourceLink records which link provided the image.
-	IsEdit          bool        // IsEdit indicates whether the form edits a saved event.
+	Event            event.Event // Event contains the form's event values.
+	Date             string      // Date is the date input value.
+	EndDate          string      // EndDate is the final date input value.
+	DateRangeInvalid bool        // DateRangeInvalid indicates that the end date precedes the start date.
+	Cost             string      // Cost is the decimal cost input value.
+	Error            string      // Error is the validation or save message.
+	Notice           string      // Notice is a non-blocking metadata message.
+	ImageSourceLink  string      // ImageSourceLink records which link provided the image.
+	IsEdit           bool        // IsEdit indicates whether the form edits a saved event.
 }
 
 // calendarMonth contains the month title, navigation links, and day cells.
@@ -131,7 +132,8 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) newEvent(w http.ResponseWriter, r *http.Request) {
-	data := pageData{Title: "Add an event", ActiveTab: "upcoming", Content: "new-event", Form: formData{Date: h.today().Format("2006-01-02")}}
+	today := h.today().Format("2006-01-02")
+	data := pageData{Title: "Add an event", ActiveTab: "upcoming", Content: "new-event", Form: formData{Date: today, EndDate: today}}
 	h.render(w, http.StatusOK, "layout", data)
 }
 
@@ -155,6 +157,7 @@ func (h *Handler) preview(w http.ResponseWriter, r *http.Request) {
 			form.Event.ImageURL = metadata.ImageURL
 			form.ImageSourceLink = metadata.Link
 			form.Date = metadata.Date
+			form.EndDate = metadata.Date
 			form.Event.Time = metadata.Time
 			form.Cost = metadata.Cost
 		}
@@ -264,12 +267,10 @@ func (h *Handler) parseEvent(r *http.Request) (event.Event, formData, error) {
 	}
 	dateValue := strings.TrimSpace(r.FormValue("date"))
 	endDateValue := strings.TrimSpace(r.FormValue("end_date"))
-	multiDay := r.FormValue("multiple_days") == "true"
 	form := formData{
-		Date:     dateValue,
-		EndDate:  endDateValue,
-		MultiDay: multiDay,
-		Cost:     strings.TrimSpace(r.FormValue("cost")),
+		Date:    dateValue,
+		EndDate: endDateValue,
+		Cost:    strings.TrimSpace(r.FormValue("cost")),
 		Event: event.Event{
 			Name:             strings.TrimSpace(r.FormValue("name")),
 			Time:             strings.TrimSpace(r.FormValue("time")),
@@ -290,14 +291,18 @@ func (h *Handler) parseEvent(r *http.Request) (event.Event, formData, error) {
 		}
 		form.Event.Date = date
 	}
-	if multiDay {
-		if endDateValue == "" {
-			return event.Event{}, form, errors.New("an end date is required for a multiple-day event")
-		}
-		endDate, err := time.ParseInLocation("2006-01-02", endDateValue, h.location)
-		if err != nil {
-			return event.Event{}, form, errors.New("event end date must be a valid date")
-		}
+	if endDateValue == "" {
+		return event.Event{}, form, errors.New("event end date is required")
+	}
+	endDate, err := time.ParseInLocation("2006-01-02", endDateValue, h.location)
+	if err != nil {
+		return event.Event{}, form, errors.New("event end date must be a valid date")
+	}
+	if !form.Event.Date.IsZero() && endDate.Before(form.Event.Date) {
+		form.DateRangeInvalid = true
+		return event.Event{}, form, errors.New("end date must be on or after the start date")
+	}
+	if !endDate.Equal(form.Event.Date) {
 		form.Event.EndDate = endDate
 	}
 	if form.Cost != "" {
@@ -326,7 +331,7 @@ func (h *Handler) addImageFromLink(ctx context.Context, item *event.Event) {
 }
 
 func (h *Handler) formFor(item event.Event, isEdit bool) formData {
-	form := formData{Event: item, Date: item.Date.Format("2006-01-02"), IsEdit: isEdit, MultiDay: !item.EndDate.IsZero()}
+	form := formData{Event: item, Date: item.Date.Format("2006-01-02"), EndDate: item.Date.Format("2006-01-02"), IsEdit: isEdit}
 	if !item.EndDate.IsZero() {
 		form.EndDate = item.EndDate.Format("2006-01-02")
 	}
@@ -374,8 +379,20 @@ func (h *Handler) card(item event.Event) eventCard {
 		Day:       item.Date.Format("02"),
 		Month:     month,
 		Year:      year,
+		MultiDay:  multiDay,
 		DateLabel: dateLabel,
 		HasImage:  item.ImageURL != "",
+	}
+	if multiDay {
+		card.Month = strings.ToUpper(item.Date.Format("Jan"))
+		card.Day = item.Date.Format("2") + " – " + item.EndDate.Format("2")
+		if item.Date.Year() != item.EndDate.Year() {
+			if yearDiffers || item.EndDate.Year() != h.today().Year() {
+				card.Year = fmt.Sprintf("%d – %d", item.Date.Year(), item.EndDate.Year())
+			}
+		} else if yearDiffers {
+			card.Year = fmt.Sprintf("%d", item.Date.Year())
+		}
 	}
 	if item.Time != "" {
 		parsed, err := time.Parse("15:04", item.Time)

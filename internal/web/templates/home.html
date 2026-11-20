@@ -47,7 +47,7 @@
 {{define "event-card"}}
 <article class="event-card">
   <div class="event-date" aria-label="{{.DateLabel}}">
-    <span class="event-month">{{.Month}}</span><span class="event-day">{{.Day}}</span>{{if .Year}}<span class="event-year">{{.Year}}</span>{{end}}
+    <span class="event-month">{{.Month}}</span><span class="event-day{{if .MultiDay}} event-day-range{{end}}">{{.Day}}</span>{{if .Year}}<span class="event-year">{{.Year}}</span>{{end}}
   </div>
   {{if .HasImage}}<img class="event-image" src="{{.Event.ImageURL}}" alt="" loading="lazy" referrerpolicy="no-referrer">{{else}}<div class="event-art" aria-hidden="true"><span>✳</span></div>{{end}}
   <div class="event-info">

@@ -2,7 +2,7 @@
 
 `events` is a small Go and HTMX app for a list of upcoming plans. Add an event by pasting a page URL, or enter its details yourself. The calendar is a secondary view.
 
-Event name and date are required. Time, cost, and link are optional. Ticket checkboxes track whether tickets are required and purchased. Both states show on the upcoming list.
+Event name and start and end dates are required. The end date defaults to the start date; matching dates make a single-day event, and a later end date makes an inclusive multi-day range. An end date before the start date cannot be saved. Time, cost, and link are optional. Ticket checkboxes track whether tickets are required and purchased. Both states show on the upcoming list. Multi-day events show their abbreviated date range on the Upcoming list and appear on each day in the calendar.
 
 ## Build the container image
 
