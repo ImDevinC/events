@@ -4,7 +4,7 @@
 
 Event name and start and end dates are required. The end date defaults to the start date; matching dates make a single-day event, and a later end date makes an inclusive multi-day range. An end date before the start date cannot be saved. Time, cost, and link are optional. Ticket checkboxes track whether tickets are required and purchased. Both states show on the upcoming list. Multi-day events show their abbreviated date range on the Upcoming list and appear on each day in the calendar.
 
-The appearance follows your device's light or dark mode by default. Use the sun/moon button in the header to switch modes; your choice is saved in this browser and remains in effect until you change it again.
+The appearance follows your device's light or dark mode by default. Dark mode keeps the bold yellow and purple accents while using dark surfaces and subdued outlines. Use the sun/moon button in the header to switch modes; your choice is saved in this browser and remains in effect until you change it again.
 
 ## Build the container image
 
