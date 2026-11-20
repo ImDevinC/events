@@ -67,3 +67,7 @@ All runtime settings use environment variables. The defaults below support local
 The importer reads Open Graph and Twitter metadata, common event meta tags, and Schema.org Event JSON-LD. It fills in fields that it can find. You can review and change them before saving. A link can also load a thumbnail when you add or edit an event.
 
 The importer only requests public HTTP and HTTPS addresses. It blocks private IP addresses, limits redirects, time, and page size, and does not run page scripts.
+
+## Contributor documentation
+
+Keep this README and [`AGENTS.md`](AGENTS.md) current and consistent whenever the project changes. See `AGENTS.md` for the documentation-maintenance rules and pull request Semantic Versioning requirements.
