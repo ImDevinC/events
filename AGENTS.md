@@ -9,6 +9,8 @@
 - When either document's instructions or documented behavior changes, review the
   other document for consistency and update it if needed. Do not leave conflicting
   or stale guidance between these files.
+- Keep the README's event behavior description aligned with the app, including
+  start/end date defaults, inclusive multi-day ranges, and validation rules.
 - The README points contributors to this file for the full documentation-maintenance
   rules; preserve that link if reorganizing the README.
 

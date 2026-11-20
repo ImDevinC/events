@@ -20,14 +20,14 @@
     <label class="field field-wide">Event name <span class="required-mark">*</span>
       <input name="name" type="text" maxlength="200" value="{{.Form.Event.Name}}" placeholder="The thing you’re looking forward to" required autocomplete="off">
     </label>
-    <label class="field">Date <span class="required-mark">*</span>
-      <input name="date" type="date" value="{{.Form.Date}}" required>
-    </label>
     <div class="date-range-fields field-wide">
-      <label class="checkbox-field"><input name="multiple_days" type="checkbox" value="true"{{if .Form.MultiDay}} checked{{end}}><span>Multiple days</span></label>
-      <label class="field end-date-field"{{if not .Form.MultiDay}} hidden{{end}}>End date <span class="required-mark">*</span>
-        <input name="end_date" type="date" value="{{.Form.EndDate}}"{{if .Form.MultiDay}} required{{else}} disabled{{end}}>
+      <label class="field">Start date <span class="required-mark">*</span>
+        <input name="date" type="date" value="{{.Form.Date}}" required>
       </label>
+      <label class="field">End date <span class="required-mark">*</span>
+        <input name="end_date" type="date" value="{{.Form.EndDate}}" required aria-describedby="date-range-error">
+      </label>
+      <p id="date-range-error" class="date-range-error" role="alert"{{if not .Form.DateRangeInvalid}} hidden{{end}}>End date must be on or after the start date.</p>
     </div>
     <label class="field">Time <span class="field-hint">(optional)</span>
       <input name="time" type="time" value="{{.Form.Event.Time}}">
@@ -48,7 +48,7 @@
   </div>
   {{if .Form.Event.ImageURL}}<div class="image-preview"><img src="{{.Form.Event.ImageURL}}" alt="Event preview" referrerpolicy="no-referrer"><span>Thumbnail found from the event page</span></div>{{end}}
   <div class="form-actions">
-    <button class="button button-primary" type="submit">{{if .Form.IsEdit}}Save changes{{else}}Save event{{end}} <span aria-hidden="true">↗</span></button>
+    <button class="button button-primary" type="submit"{{if .Form.DateRangeInvalid}} disabled{{end}}>{{if .Form.IsEdit}}Save changes{{else}}Save event{{end}} <span aria-hidden="true">↗</span></button>
     <a class="text-link" href="/">Cancel</a>
   </div>
 </form>

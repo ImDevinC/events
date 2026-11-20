@@ -47,6 +47,7 @@ h1, h2, h3, p { margin-top: 0; }
 .button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 12px; border: var(--line); border-radius: var(--radius); padding: 0 17px; box-shadow: var(--shadow-small); text-decoration: none; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, background .12s ease; }
 .button:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .button:active { transform: translate(3px, 3px); box-shadow: none; }
+.button:disabled { cursor: not-allowed; opacity: .58; transform: none; box-shadow: var(--shadow-small); }
 .button-dark { background: var(--ink); color: white; }
 .button-dark:hover { background: #2b3b52; }
 .button-primary { background: var(--yellow); color: var(--ink); }
@@ -77,11 +78,12 @@ h1, h2, h3, p { margin-top: 0; }
 .heading-period { color: var(--purple); }
 .count-pill { border: 1.5px solid var(--ink); border-radius: 100px; padding: 7px 11px; background: var(--yellow); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 800; letter-spacing: .07em; }
 .event-list { display: grid; gap: 14px; }
-.event-card { display: grid; grid-template-columns: 64px 110px minmax(0, 1fr) auto; gap: 19px; align-items: center; min-height: 136px; border: var(--line); border-radius: var(--radius); padding: 13px 17px; background: var(--white); box-shadow: 3px 3px 0 var(--ink); transition: transform .12s ease, box-shadow .12s ease; }
+.event-card { display: grid; grid-template-columns: 105px 110px minmax(0, 1fr) auto; gap: 19px; align-items: center; min-height: 136px; border: var(--line); border-radius: var(--radius); padding: 13px 17px; background: var(--white); box-shadow: 3px 3px 0 var(--ink); transition: transform .12s ease, box-shadow .12s ease; }
 .event-card:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
-.event-date { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 68px; border-right: 1px solid #d4d7da; padding-right: 12px; }
+.event-date { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; min-height: 68px; border-right: 1px solid #d4d7da; padding-right: 12px; }
 .event-month { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
 .event-day { font-size: 35px; font-weight: 850; line-height: 1; letter-spacing: -.07em; }
+.event-day-range { font-size: 19px; letter-spacing: -.06em; white-space: nowrap; }
 .event-year { margin-top: 2px; color: #596574; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; line-height: 1; letter-spacing: .02em; }
 .event-image, .event-art { width: 110px; height: 88px; border: 1.5px solid var(--ink); border-radius: 5px; object-fit: cover; }
 .event-art { display: grid; place-items: center; background: #e8e4ff; color: var(--purple); }
@@ -128,8 +130,9 @@ h1, h2, h3, p { margin-top: 0; }
 .checkbox-field { display: flex; min-height: 44px; align-items: center; gap: 10px; border: 1.5px solid #c9cdd2; border-radius: 5px; padding: 8px 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .checkbox-field:hover { border-color: var(--ink); background: #fffbea; }
 .checkbox-field input { width: 18px; height: 18px; flex: 0 0 18px; margin: 0; accent-color: var(--purple); }
-.date-range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.end-date-field[hidden] { display: none; }
+.date-range-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; align-items: start; }
+.date-range-error { grid-column: 1 / -1; margin: -4px 0 0; color: var(--red); font-size: 12px; font-weight: 700; }
+.date-range-error[hidden] { display: none; }
 .input-prefix { display: flex; align-items: center; height: 45px; border: 2px solid var(--ink); border-radius: 6px; padding-left: 12px; background: var(--paper); }
 .input-prefix > span { color: #697481; font-weight: 600; }
 .input-prefix input { height: 41px; border: 0; padding-left: 7px; background: transparent; }
@@ -171,11 +174,12 @@ h1, h2, h3, p { margin-top: 0; }
   .sticker-text { font-size: 20px; }
   .sticker-date { font-size: 5px; }
   .url-add { grid-template-columns: 1fr; gap: 17px; padding: 21px; margin-bottom: 62px; }
-  .event-card { grid-template-columns: 54px 82px minmax(0, 1fr); gap: 12px; padding: 12px; }
+  .event-card { grid-template-columns: 92px 82px minmax(0, 1fr); gap: 12px; padding: 12px; }
   .event-image, .event-art { width: 82px; height: 72px; }
   .event-date { padding-right: 8px; }
   .event-month { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
   .event-day { font-size: 30px; }
+  .event-day-range { font-size: 17px; }
   .event-info h3 { font-size: 18px; }
   .event-meta { grid-column: 3; flex-direction: row; align-items: center; justify-content: space-between; }
   .empty-state { flex-wrap: wrap; }
@@ -202,10 +206,11 @@ h1, h2, h3, p { margin-top: 0; }
   .url-form { flex-direction: column; }
   .url-form .button { width: 100%; }
   .section-heading h2 { font-size: 29px; }
-  .event-card { grid-template-columns: 70px minmax(0, 1fr) auto; gap: 10px; }
+  .event-card { grid-template-columns: 84px minmax(0, 1fr) auto; gap: 10px; }
   .event-date { min-height: 55px; padding-right: 6px; }
-  .event-month { font-size: 8px; }
+  .event-month { font-size: 8px; letter-spacing: -.03em; }
   .event-day { font-size: 27px; }
+  .event-day-range { font-size: 15px; }
   .event-image, .event-art { display: none; }
   .event-info { grid-column: 2 / -1; }
   .event-info h3 { font-size: 16px; }
@@ -216,7 +221,7 @@ h1, h2, h3, p { margin-top: 0; }
   .empty-state .button { width: 100%; margin-left: 0; }
   .form-grid { grid-template-columns: 1fr; }
   .ticket-fields { grid-template-columns: 1fr; }
-  .date-range-fields { grid-template-columns: 1fr; }
+  .date-range-fields { grid-template-columns: minmax(0, 1fr); }
   .field-wide { grid-column: auto; }
   .event-form { padding: 19px; }
   .calendar-heading { align-items: flex-start; }
