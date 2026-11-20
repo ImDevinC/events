@@ -1,0 +1,68 @@
+{{define "home"}}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="status-dot"></span> YOUR PLANS, IN ONE PLACE</p>
+    <h1>Make room for<br><span>good things.</span></h1>
+    <p class="hero-intro">A simple place for the shows, dinners, trips, and little things you’re looking forward to.</p>
+    <a class="button button-dark" href="/events/new"><span aria-hidden="true">+</span> Add an event</a>
+  </div>
+  <div class="hero-sticker" aria-hidden="true">
+    <span class="sticker-spark">✳</span>
+    <span class="sticker-text">LOOK<br>FORWARD<br>TO IT</span>
+    <span class="sticker-date">★ &nbsp; MAKE IT A DATE &nbsp; ★</span>
+  </div>
+</section>
+
+<section class="url-add panel" aria-labelledby="url-add-title">
+  <div class="url-add-copy">
+    <span class="number-tag">01</span>
+    <div><h2 id="url-add-title">Got a link?</h2><p>Paste an event page. We’ll grab what we can.</p></div>
+  </div>
+  <form class="url-form" method="post" action="/events/preview" hx-post="/events/preview" hx-target="#event-draft" hx-swap="innerHTML">
+    <label class="visually-hidden" for="event-link">Event webpage URL</label>
+    <input id="event-link" type="url" name="link" placeholder="https://your-event.com" required>
+    <button class="button button-primary" type="submit">Pull in details <span aria-hidden="true">↗</span></button>
+  </form>
+  <div id="event-draft" class="draft-slot" aria-live="polite"></div>
+</section>
+
+<section class="upcoming-section" aria-labelledby="upcoming-heading">
+  <div class="section-heading">
+    <div><p class="eyebrow">THE GOOD STUFF AHEAD</p><h2 id="upcoming-heading">Coming up<span class="heading-period">.</span></h2></div>
+    <span class="count-pill">{{len .Events}} {{if eq (len .Events) 1}}PLAN{{else}}PLANS{{end}}</span>
+  </div>
+  {{if .Events}}
+    <div class="event-list">
+      {{range .Events}}{{template "event-card" .}}{{end}}
+    </div>
+  {{else}}
+    <div class="empty-state panel">
+      <div class="empty-icon" aria-hidden="true">✳</div>
+      <div><h3>Nothing on the calendar. Yet.</h3><p>Add the first thing you’re excited about. Future you says thanks.</p></div>
+      <a class="button button-dark" href="/events/new">Add your first event <span aria-hidden="true">↗</span></a>
+    </div>
+  {{end}}
+</section>
+{{end}}
+
+{{define "event-card"}}
+<article class="event-card">
+  <div class="event-date" aria-label="{{.DateLabel}}">
+    <span class="event-month">{{.Month}}</span><span class="event-day">{{.Day}}</span>{{if .Year}}<span class="event-year">{{.Year}}</span>{{end}}
+  </div>
+  {{if .HasImage}}<img class="event-image" src="{{.Event.ImageURL}}" alt="" loading="lazy" referrerpolicy="no-referrer">{{else}}<div class="event-art" aria-hidden="true"><span>✳</span></div>{{end}}
+  <div class="event-info">
+    <p class="event-date-line">{{.DateLabel}} <span>·</span> {{.TimeLabel}}</p>
+    <h3><a href="/events/{{.Event.ID}}/edit">{{.Event.Name}}</a></h3>
+    <div class="ticket-status" aria-label="Ticket status">
+      <span class="ticket-tag{{if .Event.TicketsRequired}} ticket-required{{else}} ticket-not-required{{end}}">{{if .Event.TicketsRequired}}Tickets required{{else}}Tickets not required{{end}}</span>
+      <span class="ticket-tag{{if .Event.TicketsPurchased}} ticket-purchased{{else}} ticket-not-purchased{{end}}">{{if .Event.TicketsPurchased}}Tickets purchased{{else}}Not purchased{{end}}</span>
+    </div>
+    {{if .Event.Link}}<a class="event-source" href="{{.Event.Link}}" target="_blank" rel="noopener noreferrer">Event details <span aria-hidden="true">↗</span></a>{{end}}
+  </div>
+  <div class="event-meta">
+    {{if .CostLabel}}<span class="cost-tag">{{.CostLabel}}</span>{{else}}<span class="cost-tag cost-unspecified">Cost not set</span>{{end}}
+    <a class="edit-link" href="/events/{{.Event.ID}}/edit" aria-label="Edit {{.Event.Name}}">Edit <span aria-hidden="true">↗</span></a>
+  </div>
+</article>
+{{end}}

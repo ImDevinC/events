@@ -1,0 +1,30 @@
+{{define "calendar"}}
+<section class="calendar-page">
+  <div class="section-heading calendar-heading">
+    <div><p class="eyebrow">A LITTLE MORE OVERVIEW</p><h1>Event calendar<span class="heading-period">.</span></h1></div>
+    <a class="button button-dark" href="/events/new"><span aria-hidden="true">+</span> Add event</a>
+  </div>
+  {{template "calendar-grid" .}}
+</section>
+{{end}}
+
+{{define "calendar-grid"}}
+<section id="calendar" class="calendar-shell panel" aria-label="{{.Month.Title}} event calendar">
+  <div class="calendar-toolbar">
+    <a class="calendar-arrow" href="/calendar?month={{.Month.Previous}}" hx-get="/calendar?month={{.Month.Previous}}" hx-target="#calendar" hx-swap="outerHTML" hx-push-url="true" aria-label="Previous month">←</a>
+    <h2>{{.Month.Title}}</h2>
+    <a class="calendar-arrow" href="/calendar?month={{.Month.Next}}" hx-get="/calendar?month={{.Month.Next}}" hx-target="#calendar" hx-swap="outerHTML" hx-push-url="true" aria-label="Next month">→</a>
+  </div>
+  <div class="calendar-grid" role="grid" aria-label="{{.Month.Title}}">
+    <div class="weekday" role="columnheader">Sun</div><div class="weekday" role="columnheader">Mon</div><div class="weekday" role="columnheader">Tue</div><div class="weekday" role="columnheader">Wed</div><div class="weekday" role="columnheader">Thu</div><div class="weekday" role="columnheader">Fri</div><div class="weekday" role="columnheader">Sat</div>
+    {{range .Month.Days}}
+      <div class="calendar-day{{if not .InMonth}} outside-month{{end}}{{if .Today}} today{{end}}" role="gridcell">
+        <span class="calendar-day-number">{{.DayNumber}}</span>
+        {{range .Events}}
+          <a class="calendar-event" href="/events/{{.Event.ID}}/edit" title="{{.Event.Name}} · {{.TimeLabel}}">{{.Event.Name}}</a>
+        {{end}}
+      </div>
+    {{end}}
+  </div>
+</section>
+{{end}}

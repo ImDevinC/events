@@ -1,0 +1,31 @@
+{{define "layout"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#fdc800">
+    <title>{{.Title}} · events</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script defer src="/assets/htmx.min.js"></script>
+    <script defer src="/assets/htmx-config.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="events home"><span class="brand-mark">e.</span><span>events</span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/"{{if eq .ActiveTab "upcoming"}} class="active" aria-current="page"{{end}}>Upcoming</a>
+        <a href="/calendar"{{if eq .ActiveTab "calendar"}} class="active" aria-current="page"{{end}}>Calendar</a>
+      </nav>
+      <a class="button button-small button-dark header-add" href="/events/new"><span aria-hidden="true">+</span> Add event</a>
+    </header>
+    <main id="main-content">
+      {{if eq .Content "home"}}{{template "home" .}}{{end}}
+      {{if eq .Content "new-event"}}{{template "new-event" .}}{{end}}
+      {{if eq .Content "edit-event"}}{{template "edit-event" .}}{{end}}
+      {{if eq .Content "calendar"}}{{template "calendar" .}}{{end}}
+    </main>
+    <footer class="site-footer"><span>Make plans. Keep them.</span><span>One good thing at a time.</span></footer>
+  </body>
+</html>
+{{end}}
