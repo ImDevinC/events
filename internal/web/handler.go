@@ -57,6 +57,8 @@ type eventCard struct {
 type formData struct {
 	Event           event.Event // Event contains the form's event values.
 	Date            string      // Date is the date input value.
+	EndDate         string      // EndDate is the optional final date input value.
+	MultiDay        bool        // MultiDay indicates that the end date field is selected.
 	Cost            string      // Cost is the decimal cost input value.
 	Error           string      // Error is the validation or save message.
 	Notice          string      // Notice is a non-blocking metadata message.
@@ -240,8 +242,9 @@ func (h *Handler) calendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, h.location)
-	end := start.AddDate(0, 1, 0)
-	events, err := h.store.Between(r.Context(), start, end)
+	gridStart := start.AddDate(0, 0, -int(start.Weekday()))
+	gridEnd := gridStart.AddDate(0, 0, 42)
+	events, err := h.store.Between(r.Context(), gridStart, gridEnd)
 	if err != nil {
 		slog.Error("load calendar events", "error", err)
 		http.Error(w, "Could not load the calendar.", http.StatusInternalServerError)
@@ -260,9 +263,13 @@ func (h *Handler) parseEvent(r *http.Request) (event.Event, formData, error) {
 		return event.Event{}, formData{}, errors.New("event form is not valid")
 	}
 	dateValue := strings.TrimSpace(r.FormValue("date"))
+	endDateValue := strings.TrimSpace(r.FormValue("end_date"))
+	multiDay := r.FormValue("multiple_days") == "true"
 	form := formData{
-		Date: dateValue,
-		Cost: strings.TrimSpace(r.FormValue("cost")),
+		Date:     dateValue,
+		EndDate:  endDateValue,
+		MultiDay: multiDay,
+		Cost:     strings.TrimSpace(r.FormValue("cost")),
 		Event: event.Event{
 			Name:             strings.TrimSpace(r.FormValue("name")),
 			Time:             strings.TrimSpace(r.FormValue("time")),
@@ -282,6 +289,16 @@ func (h *Handler) parseEvent(r *http.Request) (event.Event, formData, error) {
 			return event.Event{}, form, errors.New("event date must be a valid date")
 		}
 		form.Event.Date = date
+	}
+	if multiDay {
+		if endDateValue == "" {
+			return event.Event{}, form, errors.New("an end date is required for a multiple-day event")
+		}
+		endDate, err := time.ParseInLocation("2006-01-02", endDateValue, h.location)
+		if err != nil {
+			return event.Event{}, form, errors.New("event end date must be a valid date")
+		}
+		form.Event.EndDate = endDate
 	}
 	if form.Cost != "" {
 		cost, err := event.ParseCost(form.Cost)
@@ -309,7 +326,10 @@ func (h *Handler) addImageFromLink(ctx context.Context, item *event.Event) {
 }
 
 func (h *Handler) formFor(item event.Event, isEdit bool) formData {
-	form := formData{Event: item, Date: item.Date.Format("2006-01-02"), IsEdit: isEdit}
+	form := formData{Event: item, Date: item.Date.Format("2006-01-02"), IsEdit: isEdit, MultiDay: !item.EndDate.IsZero()}
+	if !item.EndDate.IsZero() {
+		form.EndDate = item.EndDate.Format("2006-01-02")
+	}
 	if item.ImageURL != "" {
 		form.ImageSourceLink = item.Link
 	}
@@ -331,10 +351,23 @@ func (h *Handler) card(item event.Event) eventCard {
 	yearDiffers := item.Date.Year() != h.today().Year()
 	month := strings.ToUpper(item.Date.Format("Jan"))
 	dateLabel := item.Date.Format("Monday, January 2")
+	multiDay := !item.EndDate.IsZero()
 	year := ""
 	if yearDiffers {
 		year = fmt.Sprintf("%d", item.Date.Year())
 		dateLabel += fmt.Sprintf(", %d", item.Date.Year())
+	}
+	if multiDay {
+		startYear := item.Date.Year() != h.today().Year() || item.Date.Year() != item.EndDate.Year()
+		endYear := item.EndDate.Year() != h.today().Year() || item.Date.Year() != item.EndDate.Year()
+		dateLabel = item.Date.Format("Monday, January 2")
+		if startYear {
+			dateLabel += fmt.Sprintf(", %d", item.Date.Year())
+		}
+		dateLabel += " – " + item.EndDate.Format("Monday, January 2")
+		if endYear {
+			dateLabel += fmt.Sprintf(", %d", item.EndDate.Year())
+		}
 	}
 	card := eventCard{
 		Event:     item,
@@ -364,13 +397,18 @@ func (h *Handler) makeCalendar(month time.Time, events []event.Event) calendarMo
 	today := h.today().Format("2006-01-02")
 	days := make([]calendarDay, 42)
 	byDate := make(map[string][]eventCard, len(events))
-	for _, item := range events {
-		key := item.Date.Format("2006-01-02")
-		byDate[key] = append(byDate[key], h.card(item))
-	}
 	for index := range days {
 		date := gridStart.AddDate(0, 0, index)
 		key := date.Format("2006-01-02")
+		for _, item := range events {
+			lastDate := item.EndDate
+			if lastDate.IsZero() {
+				lastDate = item.Date
+			}
+			if key >= item.Date.Format("2006-01-02") && key <= lastDate.Format("2006-01-02") {
+				byDate[key] = append(byDate[key], h.card(item))
+			}
+		}
 		days[index] = calendarDay{
 			Date:      date,
 			DayNumber: strconv.Itoa(date.Day()),

@@ -19,8 +19,22 @@ import (
 
 // TestNewHandlerParsesTemplates verifies that the embedded web templates are valid.
 func TestNewHandlerParsesTemplates(t *testing.T) {
-	if _, err := web.NewHandler(nil, metadata.NewFetcher(time.Second), time.UTC, 2*time.Second); err != nil {
+	handler, err := web.NewHandler(nil, metadata.NewFetcher(time.Second), time.UTC, 2*time.Second)
+	if err != nil {
 		t.Fatalf("NewHandler() returned an error: %v", err)
+	}
+	request := httptest.NewRequest(http.MethodGet, "/events/new", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `name="multiple_days"`) || !strings.Contains(response.Body.String(), `class="field end-date-field" hidden`) {
+		t.Fatalf("new event form did not render the collapsed multi-day date selector: status %d", response.Code)
+	}
+
+	assetRequest := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
+	assetResponse := httptest.NewRecorder()
+	handler.ServeHTTP(assetResponse, assetRequest)
+	if assetResponse.Code != http.StatusOK || !strings.Contains(assetResponse.Body.String(), `name !== "multiple_days"`) {
+		t.Fatalf("multi-day form behavior script was not served: status %d", assetResponse.Code)
 	}
 }
 
@@ -48,8 +62,9 @@ func TestHomeShowsTicketStatusAndNonCurrentYear(t *testing.T) {
 	nameSuffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	currentName := "Current year test " + nameSuffix
 	nextName := "Next year test " + nameSuffix
+	multiName := "Multi-day test " + nameSuffix
 	t.Cleanup(func() {
-		_, err := cleanupDatabase.ExecContext(context.Background(), `DELETE FROM events WHERE name IN ($1, $2)`, currentName, nextName)
+		_, err := cleanupDatabase.ExecContext(context.Background(), `DELETE FROM events WHERE name IN ($1, $2, $3)`, currentName, nextName, multiName)
 		if err != nil {
 			t.Errorf("clean up test events: %v", err)
 		}
@@ -86,6 +101,19 @@ func TestHomeShowsTicketStatusAndNonCurrentYear(t *testing.T) {
 	}
 	postEvent(currentName, currentDate, true, false)
 	postEvent(nextName, nextDate, true, true)
+	multiForm := url.Values{
+		"name":          {multiName},
+		"date":          {"2099-06-12"},
+		"multiple_days": {"true"},
+		"end_date":      {"2099-06-14"},
+	}
+	multiRequest := httptest.NewRequest(http.MethodPost, "/events", strings.NewReader(multiForm.Encode()))
+	multiRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	multiResponse := httptest.NewRecorder()
+	handler.ServeHTTP(multiResponse, multiRequest)
+	if multiResponse.Code != http.StatusSeeOther {
+		t.Fatalf("POST multi-day /events returned status %d, body %q", multiResponse.Code, multiResponse.Body.String())
+	}
 
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
@@ -103,5 +131,18 @@ func TestHomeShowsTicketStatusAndNonCurrentYear(t *testing.T) {
 	}
 	if !strings.Contains(body, "Tickets required") || !strings.Contains(body, "Not purchased") || !strings.Contains(body, "Tickets purchased") {
 		t.Fatal("upcoming page did not show ticket status")
+	}
+	if !strings.Contains(body, "Friday, June 12, 2099 – Sunday, June 14, 2099") {
+		t.Fatal("upcoming page did not show the complete multi-day date range")
+	}
+
+	calendarRequest := httptest.NewRequest(http.MethodGet, "/calendar?month=2099-06", nil)
+	calendarResponse := httptest.NewRecorder()
+	handler.ServeHTTP(calendarResponse, calendarRequest)
+	if calendarResponse.Code != http.StatusOK {
+		t.Fatalf("GET /calendar returned status %d", calendarResponse.Code)
+	}
+	if count := strings.Count(calendarResponse.Body.String(), `class="calendar-event" href="/events/`); count < 3 {
+		t.Fatalf("calendar did not display the multi-day event on all of its dates (found %d event dates)", count)
 	}
 }

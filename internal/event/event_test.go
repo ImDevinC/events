@@ -15,6 +15,29 @@ func TestEventValidateAcceptsOptionalFields(t *testing.T) {
 	}
 }
 
+// TestEventValidateAcceptsMultiDayRange verifies a valid end date after the start date.
+func TestEventValidateAcceptsMultiDayRange(t *testing.T) {
+	item := event.Event{
+		Name:    "Weekend festival",
+		Date:    time.Date(2027, time.May, 16, 0, 0, 0, 0, time.UTC),
+		EndDate: time.Date(2027, time.May, 18, 0, 0, 0, 0, time.UTC),
+	}
+	if err := item.Validate(); err != nil {
+		t.Fatalf("Validate() returned an error: %v", err)
+	}
+}
+
+// TestEventValidateRejectsEndDateBeforeOrEqualToStart verifies that multi-day ranges span multiple dates.
+func TestEventValidateRejectsEndDateBeforeOrEqualToStart(t *testing.T) {
+	date := time.Date(2027, time.May, 16, 0, 0, 0, 0, time.UTC)
+	for _, endDate := range []time.Time{date, date.AddDate(0, 0, -1)} {
+		item := event.Event{Name: "Weekend festival", Date: date, EndDate: endDate}
+		if err := item.Validate(); err == nil {
+			t.Fatalf("Validate() accepted end date %s", endDate.Format("2006-01-02"))
+		}
+	}
+}
+
 // TestEventValidateRejectsInvalidLink verifies that an event link must use HTTP or HTTPS.
 func TestEventValidateRejectsInvalidLink(t *testing.T) {
 	item := event.Event{Name: "Community concert", Date: time.Date(2027, time.May, 16, 0, 0, 0, 0, time.UTC), Time: "19:00", Link: "javascript:alert(1)"}
