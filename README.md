@@ -70,4 +70,4 @@ The importer only requests public HTTP and HTTPS addresses. It blocks private IP
 
 ## Contributor documentation
 
-Keep this README and [`AGENTS.md`](AGENTS.md) current and consistent whenever the project changes. See `AGENTS.md` for the documentation-maintenance rules and pull request Semantic Versioning requirements.
+Keep this README and [`AGENTS.md`](AGENTS.md) current and consistent whenever the project changes. See `AGENTS.md` for the documentation-maintenance rules and pull request impact requirements, including the matching GitHub label (`major`, `minor`, or `patch` for versioned changes, or `chore` when no version bump is required).

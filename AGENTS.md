@@ -16,7 +16,10 @@
 
 ## Pull request versioning
 
-- Every pull request must identify its Semantic Versioning impact: **major**,
-  **minor**, or **patch**.
-- If a PR does not change the released product and needs no version bump, say so
-  explicitly and explain why in the PR description rather than omitting versioning.
+- Every pull request must identify its impact in the description: **major**,
+  **minor**, or **patch** when it requires a version bump, or explicitly state
+  that no version bump is required and explain why (for example, documentation-only
+  changes).
+- Every pull request must include the matching GitHub label: `major`, `minor`, or
+  `patch` for versioned changes, or `chore` when no version bump is required. Ensure
+  the label matches the impact stated in the PR description.
