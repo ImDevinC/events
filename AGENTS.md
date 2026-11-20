@@ -16,9 +16,5 @@
 
 - Every pull request must identify its Semantic Versioning impact: **major**,
   **minor**, or **patch**.
-- Include the selected bump and resulting `MAJOR.MINOR.PATCH` version in the PR
-  description. Use the current project version as the baseline and apply the
-  appropriate SemVer rule: major for incompatible changes, minor for backward-
-  compatible functionality, and patch for backward-compatible fixes or maintenance.
 - If a PR does not change the released product and needs no version bump, say so
   explicitly and explain why in the PR description rather than omitting versioning.
