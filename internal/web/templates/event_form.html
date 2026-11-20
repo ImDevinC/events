@@ -23,6 +23,12 @@
     <label class="field">Date <span class="required-mark">*</span>
       <input name="date" type="date" value="{{.Form.Date}}" required>
     </label>
+    <div class="date-range-fields field-wide">
+      <label class="checkbox-field"><input name="multiple_days" type="checkbox" value="true"{{if .Form.MultiDay}} checked{{end}}><span>Multiple days</span></label>
+      <label class="field end-date-field"{{if not .Form.MultiDay}} hidden{{end}}>End date <span class="required-mark">*</span>
+        <input name="end_date" type="date" value="{{.Form.EndDate}}"{{if .Form.MultiDay}} required{{else}} disabled{{end}}>
+      </label>
+    </div>
     <label class="field">Time <span class="field-hint">(optional)</span>
       <input name="time" type="time" value="{{.Form.Event.Time}}">
     </label>

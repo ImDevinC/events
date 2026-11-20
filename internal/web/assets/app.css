@@ -128,6 +128,8 @@ h1, h2, h3, p { margin-top: 0; }
 .checkbox-field { display: flex; min-height: 44px; align-items: center; gap: 10px; border: 1.5px solid #c9cdd2; border-radius: 5px; padding: 8px 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .checkbox-field:hover { border-color: var(--ink); background: #fffbea; }
 .checkbox-field input { width: 18px; height: 18px; flex: 0 0 18px; margin: 0; accent-color: var(--purple); }
+.date-range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.end-date-field[hidden] { display: none; }
 .input-prefix { display: flex; align-items: center; height: 45px; border: 2px solid var(--ink); border-radius: 6px; padding-left: 12px; background: var(--paper); }
 .input-prefix > span { color: #697481; font-weight: 600; }
 .input-prefix input { height: 41px; border: 0; padding-left: 7px; background: transparent; }
@@ -214,6 +216,7 @@ h1, h2, h3, p { margin-top: 0; }
   .empty-state .button { width: 100%; margin-left: 0; }
   .form-grid { grid-template-columns: 1fr; }
   .ticket-fields { grid-template-columns: 1fr; }
+  .date-range-fields { grid-template-columns: 1fr; }
   .field-wide { grid-column: auto; }
   .event-form { padding: 19px; }
   .calendar-heading { align-items: flex-start; }

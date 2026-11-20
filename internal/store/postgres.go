@@ -79,16 +79,16 @@ func (p *Postgres) Migrate(ctx context.Context) error {
 // Create inserts an event and returns the saved event.
 func (p *Postgres) Create(ctx context.Context, item event.Event) (event.Event, error) {
 	return scanEvent(p.db.QueryRowContext(ctx, `
-		INSERT INTO events (name, event_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, name, event_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased`,
-		item.Name, item.Date, item.Time, nullableCost(item.CostCents), item.Link, item.ImageURL, item.TicketsRequired, item.TicketsPurchased))
+		INSERT INTO events (name, event_date, end_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, name, event_date, end_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased`,
+		item.Name, item.Date, nullableDate(item.EndDate), item.Time, nullableCost(item.CostCents), item.Link, item.ImageURL, item.TicketsRequired, item.TicketsPurchased))
 }
 
 // Get returns one event by its ID.
 func (p *Postgres) Get(ctx context.Context, id int64) (event.Event, error) {
 	return scanEvent(p.db.QueryRowContext(ctx, `
-		SELECT id, name, event_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased
+		SELECT id, name, event_date, end_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased
 		FROM events WHERE id = $1`, id))
 }
 
@@ -96,27 +96,27 @@ func (p *Postgres) Get(ctx context.Context, id int64) (event.Event, error) {
 func (p *Postgres) Update(ctx context.Context, item event.Event) (event.Event, error) {
 	saved, err := scanEvent(p.db.QueryRowContext(ctx, `
 		UPDATE events
-		SET name = $2, event_date = $3, event_time = $4, cost_cents = $5,
-		    link = $6, image_url = $7, tickets_required = $8, tickets_purchased = $9, updated_at = now()
+		SET name = $2, event_date = $3, end_date = $4, event_time = $5, cost_cents = $6,
+		    link = $7, image_url = $8, tickets_required = $9, tickets_purchased = $10, updated_at = now()
 		WHERE id = $1
-		RETURNING id, name, event_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased`,
-		item.ID, item.Name, item.Date, item.Time, nullableCost(item.CostCents), item.Link, item.ImageURL, item.TicketsRequired, item.TicketsPurchased))
+		RETURNING id, name, event_date, end_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased`,
+		item.ID, item.Name, item.Date, nullableDate(item.EndDate), item.Time, nullableCost(item.CostCents), item.Link, item.ImageURL, item.TicketsRequired, item.TicketsPurchased))
 	return saved, err
 }
 
-// Upcoming returns events on or after the given date.
+// Upcoming returns events whose date range ends on or after the given date.
 func (p *Postgres) Upcoming(ctx context.Context, from time.Time) ([]event.Event, error) {
 	return p.list(ctx, `
-		SELECT id, name, event_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased
-		FROM events WHERE event_date >= $1
+		SELECT id, name, event_date, end_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased
+		FROM events WHERE COALESCE(end_date, event_date) >= $1
 		ORDER BY event_date, event_time NULLS LAST, id`, from)
 }
 
-// Between returns events on or after start and before end.
+// Between returns events that overlap the half-open calendar range [start, end).
 func (p *Postgres) Between(ctx context.Context, start time.Time, end time.Time) ([]event.Event, error) {
 	return p.list(ctx, `
-		SELECT id, name, event_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased
-		FROM events WHERE event_date >= $1 AND event_date < $2
+		SELECT id, name, event_date, end_date, event_time, cost_cents, link, image_url, tickets_required, tickets_purchased
+		FROM events WHERE event_date < $2 AND COALESCE(end_date, event_date) >= $1
 		ORDER BY event_date, event_time NULLS LAST, id`, start, end)
 }
 
@@ -149,17 +149,21 @@ type rowScanner interface {
 func scanEvent(row rowScanner) (event.Event, error) {
 	var item event.Event
 	var eventDate time.Time
+	var endDate sql.NullTime
 	var eventTime string
 	var cost sql.NullInt64
 	var link string
 	var imageURL string
-	if err := row.Scan(&item.ID, &item.Name, &eventDate, &eventTime, &cost, &link, &imageURL, &item.TicketsRequired, &item.TicketsPurchased); err != nil {
+	if err := row.Scan(&item.ID, &item.Name, &eventDate, &endDate, &eventTime, &cost, &link, &imageURL, &item.TicketsRequired, &item.TicketsPurchased); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return event.Event{}, sql.ErrNoRows
 		}
 		return event.Event{}, fmt.Errorf("scan event: %w", err)
 	}
 	item.Date = eventDate
+	if endDate.Valid {
+		item.EndDate = endDate.Time
+	}
 	item.Time = eventTime
 	item.Link = link
 	item.ImageURL = imageURL
@@ -174,4 +178,11 @@ func nullableCost(cost *int64) any {
 		return nil
 	}
 	return *cost
+}
+
+func nullableDate(date time.Time) any {
+	if date.IsZero() {
+		return nil
+	}
+	return date
 }

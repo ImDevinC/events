@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS events (
 
 ALTER TABLE events ADD COLUMN IF NOT EXISTS tickets_required BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS tickets_purchased BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS end_date DATE;
 
 CREATE INDEX IF NOT EXISTS events_date_time_idx ON events (event_date, event_time, id);

@@ -30,10 +30,12 @@ func TestPostgresCreateReadUpdateAndList(t *testing.T) {
 
 	name := "Integration event " + time.Now().Format("20060102150405.000000000")
 	date := time.Date(2099, time.June, 12, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2099, time.June, 14, 0, 0, 0, 0, time.UTC)
 	cost := int64(2350)
 	created, err := repository.Create(ctx, event.Event{
 		Name:             name,
 		Date:             date,
+		EndDate:          endDate,
 		Time:             "19:15",
 		CostCents:        &cost,
 		Link:             "https://example.com/event",
@@ -43,12 +45,12 @@ func TestPostgresCreateReadUpdateAndList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create() returned an error: %v", err)
 	}
-	if created.ID < 1 || created.Name != name || created.CostCents == nil || *created.CostCents != cost || created.Time != "19:15" || !created.TicketsRequired || created.TicketsPurchased {
+	if created.ID < 1 || created.Name != name || created.EndDate.Format("2006-01-02") != endDate.Format("2006-01-02") || created.CostCents == nil || *created.CostCents != cost || created.Time != "19:15" || !created.TicketsRequired || created.TicketsPurchased {
 		t.Fatalf("Create() returned unexpected event: %#v", created)
 	}
 
 	loaded, err := repository.Get(ctx, created.ID)
-	if err != nil || loaded.Name != name || loaded.Date.Format("2006-01-02") != date.Format("2006-01-02") || !loaded.TicketsRequired || loaded.TicketsPurchased {
+	if err != nil || loaded.Name != name || loaded.Date.Format("2006-01-02") != date.Format("2006-01-02") || loaded.EndDate.Format("2006-01-02") != endDate.Format("2006-01-02") || !loaded.TicketsRequired || loaded.TicketsPurchased {
 		t.Fatalf("Get() returned %#v, error %v", loaded, err)
 	}
 
@@ -60,7 +62,7 @@ func TestPostgresCreateReadUpdateAndList(t *testing.T) {
 		t.Fatalf("Update() returned %#v, error %v", updated, err)
 	}
 
-	upcoming, err := repository.Upcoming(ctx, time.Date(2099, time.June, 1, 0, 0, 0, 0, time.UTC))
+	upcoming, err := repository.Upcoming(ctx, time.Date(2099, time.June, 13, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatalf("Upcoming() returned an error: %v", err)
 	}
@@ -75,7 +77,7 @@ func TestPostgresCreateReadUpdateAndList(t *testing.T) {
 		t.Fatal("Upcoming() did not return the saved event")
 	}
 
-	between, err := repository.Between(ctx, time.Date(2099, time.June, 1, 0, 0, 0, 0, time.UTC), time.Date(2099, time.July, 1, 0, 0, 0, 0, time.UTC))
+	between, err := repository.Between(ctx, time.Date(2099, time.June, 13, 0, 0, 0, 0, time.UTC), time.Date(2099, time.June, 14, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatalf("Between() returned an error: %v", err)
 	}

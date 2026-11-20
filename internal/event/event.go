@@ -14,6 +14,7 @@ type Event struct {
 	ID               int64     // ID is the unique event identifier.
 	Name             string    // Name is the event name.
 	Date             time.Time // Date is the local calendar date of the event.
+	EndDate          time.Time // EndDate is the final local calendar date, or zero for a single-day event.
 	Time             string    // Time is the optional event time in HH:MM format.
 	TicketsRequired  bool      // TicketsRequired indicates that the event requires a ticket.
 	TicketsPurchased bool      // TicketsPurchased indicates that a ticket was purchased.
@@ -32,6 +33,9 @@ func (e Event) Validate() error {
 	}
 	if e.Date.IsZero() {
 		return errors.New("event date is required")
+	}
+	if !e.EndDate.IsZero() && !e.EndDate.After(e.Date) {
+		return errors.New("end date must be after the event date")
 	}
 	if e.Time != "" {
 		if _, err := time.Parse("15:04", e.Time); err != nil {
